@@ -1,1 +1,0 @@
-../../../upstream/base/auto_reset.h
