@@ -1,112 +1,25 @@
-common_headers = atomicops                                        \
-                 atomicops_internals_atomicword_compat            \
-                 atomicops_internals_portable                     \
-                 auto_reset                                       \
-                 bit_cast                                         \
-                 check                                            \
-                 check_op                                         \
-                 compiler_specific                                \
-                 cxx17_backports                                  \
-                 debug/alias                                      \
-                 files/file_path                                  \
-                 files/file_util                                  \
-                 files/scoped_file                                \
-                 format_macros                                    \
-                 logging                                          \
-                 memory/free_deleter                              \
-                 memory/page_size                                 \
-                 memory/scoped_policy                             \
-                 metrics/histogram_functions                      \
-                 metrics/histogram_macros                         \
-                 metrics/persistent_histogram_allocator           \
-                 notreached                                       \
-                 numerics/checked_math                            \
-                 numerics/checked_math_impl                       \
-                 numerics/clamped_math                            \
-                 numerics/clamped_math_impl                       \
-                 numerics/safe_conversions                        \
-                 numerics/safe_conversions_arm_impl               \
-                 numerics/safe_conversions_impl                   \
-                 numerics/safe_math                               \
-                 numerics/safe_math_arm_impl                      \
-                 numerics/safe_math_clang_gcc_impl                \
-                 numerics/safe_math_shared_impl                   \
-                 process/memory                                   \
-                 rand_util                                        \
-                 scoped_clear_last_error                          \
-                 scoped_generic                                   \
-                 strings/string_number_conversions                \
-                 strings/string_piece                             \
-                 strings/string_util                              \
-                 strings/stringprintf                             \
-                 strings/sys_string_conversions                   \
-                 strings/utf_string_conversion_utils              \
-                 strings/utf_string_conversions                   \
-                 synchronization/condition_variable               \
-                 synchronization/lock                             \
-                 synchronization/lock_impl                        \
-                 sys_byteorder                                    \
-                 template_util                                    \
-                 third_party/icu/icu_utf                          \
-                 threading/thread_local_storage                   \
-                 ../build/build_config                            \
-                 ../build/buildflag
+common_headers = base/hxx{** -apple/* -mac/* -fuchsia/* -posix/* -**_posix -**_win} \
+                 build/hxx{build_config buildflag}
+common_source =  base/cxx{** -apple/* -mac/* -fuchsia/* -posix/* -**_posix -**_win}
 
-common_source =  debug/alias                                      \
-                 files/file_path                                  \
-                 files/scoped_file                                \
-                 logging                                          \
-                 process/memory                                   \
-                 rand_util                                        \
-                 strings/string_number_conversions                \
-                 strings/stringprintf                             \
-                 strings/utf_string_conversion_utils              \
-                 strings/utf_string_conversions                   \
-                 synchronization/lock                             \
-                 third_party/icu/icu_utf                          \
-                 threading/thread_local_storage
+posix_fuchsia_headers = base/fuchsia/hxx{**}
+posix_fuchsia_source  = base/fuchsia/cxx{**}
 
-posix_fuchsia_headers = posix/eintr_wrapper                       \
-                        posix/safe_strerror                       \
-                        strings/string_util_posix
+windows_headers = base/hxx{**_win}
+windows_source  = base/cxx{**_win}
 
-posix_fuchsia_source  = files/file_util_posix                     \
-                        memory/page_size_posix                    \
-                        posix/safe_strerror                       \
-                        synchronization/condition_variable_posix  \
-                        synchronization/lock_impl_posix           \
-                        threading/thread_local_storage_posix
+apple_headers = base/apple/hxx{**}
+apple_source = base/apple/cxx{**}
 
-windows_headers = strings/string_util_win
-
-windows_source  = memory/page_size_win                            \
-                  scoped_clear_last_error_win                     \
-                  strings/string_util_win                         \
-                  synchronization/lock_impl_win                   \
-                  threading/thread_local_storage_win
-
-mac_headers = mac/foundation_util                                 \
-              mac/mach_logging                                    \
-              mac/scoped_cftyperef                                \
-              mac/scoped_ioobject                                 \
-              mac/scoped_launch_data                              \
-              mac/scoped_mach_port                                \
-              mac/scoped_mach_vm                                  \
-              mac/scoped_nsautorelease_pool                       \
-              mac/scoped_nsobject                                 \
-              mac/scoped_typeref
-
-mac_source = mac/close_nocancel                                   \
-             mac/mach_logging                                     \
-             mac/scoped_mach_port                                 \
-             mac/scoped_mach_vm
+mac_headers = base/mac/hxx{**}
+mac_source = base/mac/cxx{**}
 
 lib{mini_chromium}: libul{mini_chromium}
 
-libul{mini_chromium}: base/{hxx}{$common_headers} base/{cxx}{$common_source}
-libul{mini_chromium}: base/{hxx}{$windows_headers} base/{cxx}{$windows_source}: include = ($cxx.target.class == 'windows')
-libul{mini_chromium}: base/{hxx}{$posix_fuchsia_headers} base/{cxx}{$posix_fuchsia_source}: include = ($cxx.target.class != 'windows')
-libul{mini_chromium}: base/{hxx}{$mac_headers} base/{cxx}{$mac_source}: include = ($cxx.target.class == 'macos')
+libul{mini_chromium}: $common_headers $common_source
+libul{mini_chromium}: $windows_headers $windows_source:             include = ($cxx.target.class == 'windows')
+libul{mini_chromium}: $posix_fuchsia_headers $posix_fuchsia_source: include = ($cxx.target.class != 'windows')
+libul{mini_chromium}: $mac_headers $mac_source:                     include = ($cxx.target.class == 'macos')
 
 # Upstream includes its headers as `<{base,build}/...>` which is pretty loose
 # since `base` and `build` have nothing to do with the library name and are
@@ -146,6 +59,7 @@ switch $cxx.target.class
     cxx.poptions += -DUNICODE  \
                     -D_UNICODE \
                     -D_CRT_SECURE_NO_WARNINGS \
+                    -D_HAS_EXCEPTIONS=0 \
                     -DNOMINMAX \
                     -DWIN32_LEAN_AND_MEAN
 
@@ -187,14 +101,12 @@ switch $cxx.class
   {
     # Note that upstream does not seem to disable RTTI (/GR).
     #
-    cxx.coptions += /EHs- /EHc-\
-                    /W4 \
-                    /wd4100 \
-                    /wd4127 \
-                    /wd4324 \
-                    /wd4351 \
-                    /wd4577 \
-                    /wd4996
+    cxx.coptions += -wd4100 \
+                    -wd4127 \
+                    -wd4324 \
+                    -wd4351 \
+                    -wd4577 \
+                    -wd4996
   }
 }
 
